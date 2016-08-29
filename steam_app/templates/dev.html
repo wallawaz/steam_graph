@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Theraputic Classifications</title>
+<script type="text/javascript" src="../static/d3.v3.min.js"></script>
+<style type="text/css">
+
+    /*rect:hover {
+        fill: black;
+    }
+    */
+
+    #tooltip {
+        position: absolute;
+        width: 0px;
+        height: auto;
+        padding: 5px;
+        background-color: white;
+        -webkit-border-radius: 5px;
+        -moz-border-radius: 5px;
+        border-radius: 5px;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        pointer-events: none;
+        text-align: center;
+    }
+    #tooltip.hidden {
+        display: none;
+    }
+    #tooltip.p {
+        margin: 0;
+        font-family: sans-serif;
+        font-size: 16px;
+        line-height: 20px;
+    }
+    #topBox {
+        position: fixed;
+        width: 0px;
+        height: auto;
+        padding: 20px;
+        background-color: white;
+        /*-webkit-border-radius: 10px;
+        -moz-border-radius: 10px;
+        border-radius: 10px;
+        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+        */
+        font-family: sans-serif;
+        font-size: 14px;
+        line-height: 10px;
+    }
+    #topBox.hidden {
+        display: none;
+    }
+
+</style>
+</head>
+<body>
+    <div id="tooltip" class="hidden">
+        <p><span id="genreName"><span></p>
+        <p><span style="border:1.5px solid blue;" id="value">0</span></p>
+    </div>
+    <div id="topBox" class="hidden"></div>
+        <script type="text/javascript">
+            var margin = { top: 60, right: 20, bottom: 60, left: 200 };
+
+            var h = 550 + margin.top + margin.bottom;
+            var w = 800 + margin.left + margin.right;
+            var countTotal = 0;
+
+            var colors = d3.scale.category20c();
+            var numericFormat = d3.format(',');
+            var initialData = [];
+            var totals = [];
+
+            var svg = d3.selectAll("body")
+                .append("svg")
+                .attr("width", w)
+                .attr("height", h);
+
+
+            //XXX todo change columns to be an object where you pass in a format for each column.
+            var array2Table = function(data, columns_obj) {
+
+                var solidBlack = function(d3Obj) {
+                    d3Obj.style("border", "1.4px solid black")
+                };
+                d3.select("#topBox").selectAll("table").remove()
+                var table = d3.select("#topBox").append("table");
+                var thead = table.append("thead");
+                var tbody = table.append("tbody");
+                table.style("border-collapse", "collapse");
+                solidBlack(table);
+
+                thead.append("tr")
+                    .selectAll("th")
+                    .data(columns_obj)
+                    .enter()
+                    .append("th")
+                    .text(function(d) { return d["column"]; })
+                    .each(function(d) {
+                            var th = d3.select(this);
+                            solidBlack(th);
+                            var styles = d["styles"];
+                            if (styles) {
+                                styles.forEach(function(s) {
+                                    th.style(s[0], s[1]);
+                                })
+                            }
+                        });
+
+                //row for each object in arr
+                var rows = tbody.selectAll("tr")
+                        .data(data)
+                        .enter()
+                        .append("tr");
+
+                var cells = rows.selectAll("td")
+                    .data(function(row) {
+                          return columns_obj.map(function(col_obj) {
+                              return {
+                                        column: col_obj["column"],
+                                        value: row[col_obj["column"]],
+                                        styles: col_obj["styles"],
+                                        format: col_obj["format"]
+                              }
+                          });
+                    })
+                    .enter()
+                    .append("td")
+                    .text(function(d) {
+                          if (d["format"]) {
+                            return d["format"](d["value"]);
+                          }
+                          else { return d["value"]; }
+                    })
+                    .each(function(d) {
+                            var td = d3.select(this);
+                            solidBlack(td);
+                            var styles = d["styles"];
+                            if (styles) {
+                                //console.log(styles);
+                                styles.forEach(function(s) {
+                                    td.style(s[0], s[1]);
+                                })
+                            }
+                        });
+                return table
+            }
+
+            var loadGraph = function() {
+                //console.log("--in-loadGraph()--");
+                var xScale = d3.scale.ordinal()
+                    .domain(d3.range(initialData.length))
+                    .rangeRoundBands([0, w], 0.05);
+
+                var yScale = d3.scale.linear()
+                    .domain([0, d3.max(totals, function(d) { return d; })])
+                    .range([0, h]);
+
+                var bars = svg.selectAll("rect")
+                    .data(initialData)
+                    .enter()
+                    .append("rect")
+                    .attr("x", function(d, i) {
+                        return xScale(i);
+                    })
+                    .attr("y", function(d) {
+                        return h - yScale(d[2]); // each data element is an array of [genre_id, genre_name, count]
+                    })
+                    .attr("width", xScale.rangeBand())
+                    .attr("height", function(d) {
+                        return yScale(d[2]);
+                    })
+                    .attr("fill", function(d, i) {
+                            return colors(i);
+                    })
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+                    .on("mouseover", function(d) {
+                            var xPos = parseFloat(d3.select(this).attr("x")) + xScale.rangeBand();
+                            var yPos = parseFloat(d3.select(this).attr("y")) + 10;
+                            var px = "px";
+                            var lengthOfName = d[1].length;
+                            var lengthOfValue = String(d[1]).length;
+                            //console.log([lengthOfName, lengthOfValue]);
+
+                            d3.select("#tooltip")
+                                .style("left", xPos + px)
+                                .style("top", yPos + px)
+                                .style("width", (lengthOfName + lengthOfValue) * 8 + px)
+                                .select("#genreName")
+                                .text(d[1]);
+                            d3.select("#tooltip").select("#value")
+                                .text(numericFormat(d[2]));
+
+                            d3.select("#tooltip").classed("hidden", false);
+                    });
+                    return bars;
+                };
+            d3.json("/list", function(error, json) {
+                for (var i in json.genres) {
+                    i = parseInt(i);
+                    totals.push(parseInt(json.genres[i][2]));
+                    initialData.push(json.genres[i]);
+                }
+                var b = loadGraph()
+                b.on("click", function(d) {
+                    var genre_id = d[0];
+                    var data = [];
+                    var myColor = d3.select(this).style("fill");
+                    d3.json("/top_games/" + genre_id, function(error, json) {
+                        for (var i in json.top_games) {
+                            data.push(json.top_games[parseInt(i)]);
+                        }
+                        var columns = [
+                            { column: "rank", styles: [], format: ""},
+                            { column: "game", styles: [], format: "" },
+                            { column: "players", styles: [["text-align","right"]], format: numericFormat }
+                        ];
+                        var topGamesTable = array2Table(data, columns);
+                        var innerHTML = topGamesTable.html()
+                        var rows = innerHTML.match(/<tr>(.*?)<\/tr>/g);
+                        var maxRow = "";
+                        rows.forEach(function(e) {
+                            if (e.length > maxRow.length) {
+                                maxRow = e;
+                            }
+                        });
+                        console.log(maxRow);
+                        var bound = topGamesTable.node().getBoundingClientRect();
+                        console.log(bound);
+                        var topBoxLeft = Math.floor(.35 * w);
+                        var topBoxHeight = Math.floor(.1 * h);
+                        var topBoxWidth  = Math.floor(maxRow.length * 1.5);
+                        var px = "px";
+                        if (bound["width"] < topBoxWidth) {
+                            var width = topBoxWidth;
+                        }
+                        else { var width = bound["width"]; }
+                        d3.select("#topBox")
+                            .style("left", topBoxLeft + px)
+                            .style("top", topBoxHeight + px)
+                            .style("width", width + px)
+                            .style("background-color", myColor)
+                        d3.select("#topBox").classed("hidden", false);
+
+                    });
+                });
+            });
+        </script>
+    </body>
+</html>
+
