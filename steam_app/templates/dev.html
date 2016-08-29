@@ -32,7 +32,7 @@
     #tooltip.p {
         margin: 0;
         font-family: sans-serif;
-        font-size: 16px;
+        font-size: 10px;
         line-height: 20px;
     }
     #topBox {
@@ -55,23 +55,28 @@
     #topBox.hidden {
         display: none;
     }
-
+    #asOfBox {
+        position: fixed;
+    }
 </style>
 </head>
 <body>
     <div id="tooltip" class="hidden">
-        <p><span id="genreName"><span></p>
+        <p><span id="genreName"></span></p>
         <p><span style="border:1.5px solid blue;" id="value">0</span></p>
     </div>
-    <div id="topBox" class="hidden"></div>
+    <div id="topBox"></div>
+    <div id="asOfBox">
+        <p><span id="ts" style="solid blue;"></span></p>
+    </div>
         <script type="text/javascript">
-            var margin = { top: 60, right: 20, bottom: 60, left: 200 };
+            var margin = { top: 60, right: 20, bottom: 80, left: 200 };
 
-            var h = 550 + margin.top + margin.bottom;
-            var w = 800 + margin.left + margin.right;
+            var h = 500 + margin.top + margin.bottom;
+            var w = 1200 + margin.left + margin.right;
             var countTotal = 0;
 
-            var colors = d3.scale.category20c();
+            var colors = d3.scale.category20();
             var numericFormat = d3.format(',');
             var initialData = [];
             var totals = [];
@@ -155,11 +160,11 @@
                 //console.log("--in-loadGraph()--");
                 var xScale = d3.scale.ordinal()
                     .domain(d3.range(initialData.length))
-                    .rangeRoundBands([0, w], 0.05);
+                    .rangeRoundBands([0, w - (margin["left"] + margin["right"])], 0.05);
 
                 var yScale = d3.scale.linear()
                     .domain([0, d3.max(totals, function(d) { return d; })])
-                    .range([0, h]);
+                    .range([0, h - (margin["top"] + margin["bottom"])]);
 
                 var bars = svg.selectAll("rect")
                     .data(initialData)
@@ -169,7 +174,7 @@
                         return xScale(i);
                     })
                     .attr("y", function(d) {
-                        return h - yScale(d[2]); // each data element is an array of [genre_id, genre_name, count]
+                        return h - margin["bottom"] - margin["top"] -  yScale(d[2]); // each data element is an array of [genre_id, genre_name, count]
                     })
                     .attr("width", xScale.rangeBand())
                     .attr("height", function(d) {
@@ -200,6 +205,25 @@
                     });
                     return bars;
                 };
+            d3.json("/as_of", function(error, json) {
+                    var ts = json["ts"];
+                    ts = ts[0];
+
+                    var message = "Results as of " + ts;
+                    var px = "px";
+
+                    var xPos = Math.floor(0.68 * w) + px;
+                    var yPos = (h - margin["bottom"] + 6) + px;
+
+                    d3.select("#asOfBox")
+                        .style("left", xPos)
+                        .style("top", yPos)
+                        .style("width", message.length * 10 + px);
+
+                    d3.select("#asOfBox").select("#ts")
+                        .text(message);
+                    });
+
             d3.json("/list", function(error, json) {
                 for (var i in json.genres) {
                     i = parseInt(i);
@@ -215,7 +239,7 @@
                         for (var i in json.top_games) {
                             data.push(json.top_games[parseInt(i)]);
                         }
-                        var columns = [
+                       var columns = [
                             { column: "rank", styles: [], format: ""},
                             { column: "game", styles: [], format: "" },
                             { column: "players", styles: [["text-align","right"]], format: numericFormat }

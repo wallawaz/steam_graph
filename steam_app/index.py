@@ -12,6 +12,8 @@ import sqlite3
 
 from contextlib import contextmanager
 from queries import queries
+from datetime import datetime
+
 
 config = {}
 with open(os.environ.get("STEAM_CONFIG", "/etc/steam/steam.yaml")) as f:
@@ -88,6 +90,28 @@ def top_games(genre_id):
             result["top_games"].append(obj)
 
     return json.dumps(result)
+
+
+@app.route("/as_of")
+def as_of():
+    query = """
+    select
+        ts
+    from
+        steam_last_call"""
+
+    result = {
+        "ts": [],
+    }
+    with cursor_execute(connection, query) as cursor:
+        for row in cursor:
+            ts = row[0]
+            ts = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S.%f")
+            ts = ts.strftime("%Y-%m-%d %H:%M:%S")
+            result["ts"].append(ts)
+
+    return json.dumps(result)
+
 
 @app.route("/")
 def index():
