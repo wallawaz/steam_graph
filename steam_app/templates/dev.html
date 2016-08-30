@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>Theraputic Classifications</title>
 <script type="text/javascript" src="../static/d3.v3.min.js"></script>
+<script type="text/javascript" src="../static/steamDetails.js"></script>
 <style type="text/css">
 
     /*rect:hover {
@@ -94,10 +95,12 @@
                     d3Obj.style("border", "1.4px solid black")
                 };
                 d3.select("#topBox").selectAll("table").remove()
-                var table = d3.select("#topBox").append("table");
+                var table = d3.select("#topBox").append("table")
+                                .style("border-collapse", "collapse");
+
                 var thead = table.append("thead");
                 var tbody = table.append("tbody");
-                table.style("border-collapse", "collapse");
+
                 solidBlack(table);
 
                 thead.append("tr")
@@ -121,7 +124,12 @@
                 var rows = tbody.selectAll("tr")
                         .data(data)
                         .enter()
-                        .append("tr");
+                        .append("tr")
+                        .attr("rowid", function(d) { return d.id; })
+                        .attr("chosen", false)
+                        .attr("onclick", function(d) {
+                                return "steamDetails(" + d.id + ")";
+                        });
 
                 var cells = rows.selectAll("td")
                     .data(function(row) {
@@ -239,10 +247,13 @@
                         for (var i in json.top_games) {
                             data.push(json.top_games[parseInt(i)]);
                         }
-                       var columns = [
-                            { column: "rank", styles: [], format: ""},
-                            { column: "game", styles: [], format: "" },
-                            { column: "players", styles: [["text-align","right"]], format: numericFormat }
+                        var displayNone = ["display", "none"];
+
+                        var columns = [
+                            {column: "rank", styles: [], format: ""},
+                            {column: "id", styles: [], format: ""},
+                            {column: "game", styles: [], format: ""},
+                            {column: "players", styles: [["text-align","right"]], format: numericFormat }
                         ];
                         var topGamesTable = array2Table(data, columns);
                         var innerHTML = topGamesTable.html()

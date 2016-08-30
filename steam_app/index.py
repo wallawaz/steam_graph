@@ -9,6 +9,8 @@ import flask
 import simplejson as json
 #from sqlalchemy import create_engine
 import sqlite3
+import requests
+
 
 from contextlib import contextmanager
 from queries import queries
@@ -84,8 +86,9 @@ def top_games(genre_id):
         for rank, row in enumerate(cursor):
             obj = {
                 "rank": rank + 1,
-                "game": row[0],
-                "players": row[1],
+                "id": row[0],
+                "game": row[1],
+                "players": row[2],
             }
             result["top_games"].append(obj)
 
@@ -111,6 +114,40 @@ def as_of():
             result["ts"].append(ts)
 
     return json.dumps(result)
+
+
+# TODO need to log each call to make sure we don't overload
+@app.route("/details/<id>")
+def details(id):
+    id = str(id)
+    url = "http://store.steampowered.com/api/appdetails?appids=" + id
+    response = requests.get(url)
+    if response.status_code != 200:
+        return json.dumps({
+            "error": str(response)
+        })
+
+    response = response.json()
+
+    response = response[id]
+    try:
+        data = response[u"data"]
+    except KeyError:
+        return json.dumps(response)
+
+    platforms = "platforms" in data
+    metacritic = "metacritic" in data
+    header_image = "header_image" in data
+
+    out = {}
+    if platforms:
+        out["platforms"] = data["platforms"]
+    if metacritic:
+        out["metacritic"] = data["metacritic"]
+    if header_image:
+        out["header_image"] = data["header_image"]
+
+    return json.dumps(out)
 
 
 @app.route("/")

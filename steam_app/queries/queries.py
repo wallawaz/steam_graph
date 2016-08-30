@@ -17,6 +17,7 @@ genre_counts = """
 
 genre_top_games = """
     select
+        a.id,
         a.name,
         a.peak_count as players
     from
