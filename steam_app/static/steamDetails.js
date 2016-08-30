@@ -1,33 +1,21 @@
-
 var steamDetails = function(id) {
     var result = {};
     var url = "/details/" + id;
+    var header_url;
     d3.json(url, function(error, json) {
         if (error) {
             console.log(error);
-            return;
         }
         else {
-            console.log(json);
-        }
-    })
-};
-            /*var output = {
-            "platforms": result["platforms"],
-            "metaritic": result["metacritic"],
-            "header_image": result["header_image"]
-        };
-        console.log(output);
-        return output;
-       
-       }
-    });
+            var u = json["header_image"];
+            var ending = u.match("\.jpg.*")[0];
+            header_url = u.replace(ending, ".jpg");
 
-var derpDetails = function(id) {
-    var url = "http://store.steampowered.com/api/appdetails?appids=" + id;
-    d3.json(url).header("X-Requested-With", "XMLHTTPRequest").get(function(error, data) {
-            var response = data;
-            console.log(response);
-            )}
-    };
-*/
+        }
+        console.log(header_url);
+    })
+
+    d3.select("#steamDetailsBox")
+        .append("<img href='" + header_url + "' />");
+
+};

@@ -4,13 +4,9 @@
 <meta charset="utf-8">
 <title>Theraputic Classifications</title>
 <script type="text/javascript" src="../static/d3.v3.min.js"></script>
-<script type="text/javascript" src="../static/steamDetails.js"></script>
+<!--<script type="text/javascript" src="../static/steamDetails.js"></script>-->
+<script src="https://use.fontawesome.com/e6d63fb807.js"></script>
 <style type="text/css">
-
-    /*rect:hover {
-        fill: black;
-    }
-    */
 
     #tooltip {
         position: absolute;
@@ -40,7 +36,7 @@
         position: fixed;
         width: 0px;
         height: auto;
-        padding: 20px;
+        padding: 15px;
         background-color: white;
         /*-webkit-border-radius: 10px;
         -moz-border-radius: 10px;
@@ -59,6 +55,12 @@
     #asOfBox {
         position: fixed;
     }
+    #steamDetailsBox {
+        position: fixed;
+        width: 0px;
+        height: auto;
+        padding: 5px;
+    }
 </style>
 </head>
 <body>
@@ -70,8 +72,22 @@
     <div id="asOfBox">
         <p><span id="ts" style="solid blue;"></span></p>
     </div>
+    <div id="steamDetailsBox">
+        <div id="headerImage"></div>
+        <div id="platforms" style="text-align: center; padding-left: 10px; padding-right: 10px;">
+            <!--
+            <i id="linux-icon" class="fa fa-linux" aria-hidden="true"></i>
+            <i id="windows-icon" class="fa fa-windows" aria-hidden="true"></i>
+            <i id="apple-icon" class="fa fa-apple" aria-hidden="true"></i>
+            -->
+        </div>
+        <div id="metacritic">
+            <!-- put href in -->
+            <p><span id="metacriticScore"></span></p>
+        </div>
+    </div>
         <script type="text/javascript">
-            var margin = { top: 60, right: 20, bottom: 80, left: 200 };
+            var margin = { top: 60, right: 20, bottom: 80, left: 20 };
 
             var h = 500 + margin.top + margin.bottom;
             var w = 1200 + margin.left + margin.right;
@@ -163,6 +179,71 @@
                         });
                 return table
             }
+
+            var steamDetails = function(id) {
+                var result = false;
+                var url = "/details/" + id;
+
+                d3.json(url, function(error, json) {
+                    if (error) {
+                        console.log(error);
+                    }
+                    else {
+
+                        result = true;
+                        var u = json["header_image"];
+                        var ending = u.match("\.jpg.*")[0];
+                        var header_url = u.replace(ending, ".jpg");
+
+                        var currentTopBox = d3.select("#topBox").node();
+                        var _style = currentTopBox.style;
+
+                        var _left = _style["left"].replace("px","");
+                        var _top = _style["top"].replace("px", "");
+                        var _width = _style["width"].replace("px", "");
+                        var px = "px";
+
+                        var detailsBox = d3.select("#steamDetailsBox")
+                            .style("left", w - parseInt(_left) - 15 + px)
+                            .style("top", _top + px)
+                            .style("width", _width + px);
+
+                        detailsBox.select("#headerImage").selectAll("img").remove();
+                        detailsBox.select("#platforms").selectAll("i").remove();
+                        detailsBox.select("#metacritic").select("metacriticScore").text("");
+
+                        detailsBox.select("#headerImage")
+                            .append("img")
+                            .attr("src", header_url)
+                            .attr("height", "150")
+                            .attr("width", _width)
+                            .attr("x", w - parseInt(_left) - 35)
+                            .attr("y", _top);
+
+                        var platforms = json["platforms"];
+                        if (platforms) {
+
+                            var platformMappings = {
+                                "windows": "fa fa-windows",
+                                "linux": "fa fa-linux",
+                                "mac": "fa fa-apple",
+                            }
+
+                            for (var i in platforms) {
+                                if (platforms[i]) {
+                                    var platformClass = platformMappings[i];
+
+                                    detailsBox.select("#platforms")
+                                        .append("i")
+                                        .classed(platformClass, true)
+                                        .attr("aria-hidden", "true")
+                                }
+                            }
+                      }
+
+                    }
+                })
+            };
 
             var loadGraph = function() {
                 //console.log("--in-loadGraph()--");
@@ -264,7 +345,6 @@
                                 maxRow = e;
                             }
                         });
-                        console.log(maxRow);
                         var bound = topGamesTable.node().getBoundingClientRect();
                         console.log(bound);
                         var topBoxLeft = Math.floor(.35 * w);
