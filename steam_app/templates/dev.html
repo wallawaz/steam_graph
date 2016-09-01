@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Theraputic Classifications</title>
+<title>SteamGraph</title>
 <script type="text/javascript" src="../static/d3.v3.min.js"></script>
 <!--<script type="text/javascript" src="../static/steamDetails.js"></script>-->
 <script src="https://use.fontawesome.com/e6d63fb807.js"></script>
@@ -33,18 +33,10 @@
         line-height: 20px;
     }
     #topBox {
-        position: fixed;
-        width: 0px;
+        position: absolute;
+        width: auto;
         height: auto;
-        padding: 15px;
-        background-color: white;
-        /*-webkit-border-radius: 10px;
-        -moz-border-radius: 10px;
-        border-radius: 10px;
-        -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-        -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-        box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
-        */
+        padding: 10px;
         font-family: sans-serif;
         font-size: 14px;
         line-height: 10px;
@@ -56,7 +48,7 @@
         position: fixed;
     }
     #steamDetailsBox {
-        position: fixed;
+        position: absolute;
         width: 0px;
         height: auto;
         padding: 5px;
@@ -66,6 +58,9 @@
     #steamDetailsBox.p {
         text-align: center;
     }
+    #steamDetailsBox.hidden {
+        display: none;
+    }
 </style>
 </head>
 <body>
@@ -73,11 +68,13 @@
         <p><span id="genreName"></span></p>
         <p><span style="border:1.5px solid blue;" id="value">0</span></p>
     </div>
-    <div id="topBox"></div>
+    <div id="topBox">
+        <div id="innerContainer"></div>
+    </div>
     <div id="asOfBox">
         <p><span id="ts" style="solid blue;"></span></p>
     </div>
-    <div id="steamDetailsBox">
+    <div id="steamDetailsBox" class="hidden">
         <div id="headerImage"></div>
         <div id="platforms" style="text-align: center; padding-left: 10px; padding-right: 10px;">
             <!--
@@ -102,6 +99,7 @@
             var numericFormat = d3.format(',');
             var initialData = [];
             var totals = [];
+            var STEAM_ID = 0;
 
             var svg = d3.selectAll("body")
                 .append("svg")
@@ -117,7 +115,9 @@
                 };
                 d3.select("#topBox").selectAll("table").remove()
                 var table = d3.select("#topBox").append("table")
-                                .style("border-collapse", "collapse");
+                              .style("border-collapse", "collapse")
+                              .attr("align", "center");
+
 
                 var thead = table.append("thead");
                 var tbody = table.append("tbody");
@@ -186,7 +186,14 @@
             }
 
             var steamDetails = function(id) {
-                var result = false;
+                console.log(STEAM_ID);
+                if (parseInt(id) === STEAM_ID) {
+                    console.log("id: " + id + " just checked.");
+                    return 0;
+                }
+                else { STEAM_ID = parseInt(id); }
+
+                console.log("hitting /details");
                 var url = "/details/" + id;
 
                 d3.json(url, function(error, json) {
@@ -195,7 +202,6 @@
                     }
                     else {
 
-                        result = true;
                         var u = json["header_image"];
                         var ending = u.match("\.jpg.*")[0];
                         var header_url = u.replace(ending, ".jpg");
@@ -209,7 +215,7 @@
                         var px = "px";
 
                         var detailsBox = d3.select("#steamDetailsBox")
-                            .style("left", w - parseInt(_left) - 15 + px)
+                            .style("left", w - parseInt(_left) - margin["left"] + px)
                             .style("top", _top + px)
                             .style("width", _width + px);
 
@@ -223,7 +229,7 @@
                             .attr("src", header_url)
                             .attr("height", "150")
                             .attr("width", _width)
-                            .attr("x", w - parseInt(_left) - 35)
+                            .attr("x", w - parseInt(_left))
                             .attr("y", _top);
 
                         var platforms = json["platforms"];
@@ -259,6 +265,7 @@
                                 .attr("href", metacriticUrl)
                                 .html("metacritic page");
                         }
+                        detailsBox.classed("hidden", false);
                     }
                 })
             };
@@ -356,30 +363,35 @@
                         ];
                         var topGamesTable = array2Table(data, columns);
                         var innerHTML = topGamesTable.html()
-                        var rows = innerHTML.match(/<tr>(.*?)<\/tr>/g);
+                        var rows = innerHTML.match(/<tr (.*?)<\/tr>/g);
                         var maxRow = "";
                         rows.forEach(function(e) {
                             if (e.length > maxRow.length) {
                                 maxRow = e;
                             }
                         });
-                        var bound = topGamesTable.node().getBoundingClientRect();
-                        console.log(bound);
+                        var bound = topGamesTable.node();
+                        console.log(maxRow);
                         var topBoxLeft = Math.floor(.35 * w);
                         var topBoxHeight = Math.floor(.1 * h);
-                        var topBoxWidth  = Math.floor(maxRow.length * 1.5);
+                        var topBoxWidth  = Math.floor(maxRow.length * 1.08);
                         var px = "px";
-                        if (bound["width"] < topBoxWidth) {
-                            var width = topBoxWidth;
+                        var arbitraryWidth = (margin["left"] + margin["right"]) * 8.2;
+
+                        if (bound["width"] > topBoxWidth) {
+                            topBoxWidth = bound["width"];
                         }
-                        else { var width = bound["width"]; }
+                        if (topBoxWidth < arbitraryWidth) {
+                            topBoxWidth = arbitraryWidth;
+                        }
+                        console.log(topBoxWidth);
                         d3.select("#topBox")
                             .style("left", topBoxLeft + px)
                             .style("top", topBoxHeight + px)
-                            .style("width", width + px)
+                            .style("width", topBoxWidth + px)
                             .style("background-color", myColor)
                         d3.select("#topBox").classed("hidden", false);
-
+                        d3.select("#steamDetailsBox").classed("hidden", true);
                     });
                 });
             });
