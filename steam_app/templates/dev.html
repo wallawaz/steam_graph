@@ -51,9 +51,13 @@
         position: absolute;
         width: 0px;
         height: auto;
-        padding: 5px;
         font-family: sans-serif;
         font-size: 14px;
+        text-align: center;
+    }
+    #steamDetailsBox.img {
+        min-width: 50%;
+        min-height: 50%;
     }
     #steamDetailsBox.p {
         text-align: center;
@@ -76,7 +80,7 @@
     </div>
     <div id="steamDetailsBox" class="hidden">
         <div id="headerImage"></div>
-        <div id="platforms" style="text-align: center; padding-left: 10px; padding-right: 10px;">
+        <div id="platforms">
             <!--
             <i id="linux-icon" class="fa fa-linux" aria-hidden="true"></i>
             <i id="windows-icon" class="fa fa-windows" aria-hidden="true"></i>
@@ -215,7 +219,7 @@
                         var px = "px";
 
                         var detailsBox = d3.select("#steamDetailsBox")
-                            .style("left", w - parseInt(_left) - margin["left"] + px)
+                            .style("left", w - parseInt(_left) + margin["right"] +  px)
                             .style("top", _top + px)
                             .style("width", _width + px);
 
@@ -226,11 +230,7 @@
 
                         detailsBox.select("#headerImage")
                             .append("img")
-                            .attr("src", header_url)
-                            .attr("height", "150")
-                            .attr("width", _width)
-                            .attr("x", w - parseInt(_left))
-                            .attr("y", _top);
+                            .attr("src", header_url);
 
                         var platforms = json["platforms"];
                         if (platforms) {

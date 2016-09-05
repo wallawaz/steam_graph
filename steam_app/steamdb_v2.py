@@ -1,10 +1,10 @@
 import requests
-import os
-import sys
 import sqlite3
 import time
+import os
+import yaml
 
-
+from contextlib import contextmanager
 from collections import Counter
 from datetime import datetime
 from random import randrange
@@ -12,15 +12,30 @@ from random import randrange
 from bs4 import BeautifulSoup
 import data.iso_codes as iso_codes
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-#current_dir = current_dir.split("/")
-#parent_dir = "/".join(current_dir[:-1])
-data_dir = current_dir + "/data/"
+import schema
 
-db_path = data_dir + "steamdb.sqlite"
+#current_dir = os.path.dirname(os.path.realpath(__file__))
+#data_dir = current_dir + "/data/"
+#db_path = data_dir + "steamdb.sqlite"
+
+confg = {}
+with open(os.environ.get("STEAM_CONFIG", "/etc/steam/steam.yaml")) as f:
+    config = yaml.load(f)
+
+db_path = config["db"]["main_url"]
 top_url = "https://steamdb.info/graph/"
 steam_url = "http://store.steampowered.com/api/appdetails?appids="
 sleep = lambda x: time.sleep(x)
+debug = config["general"]["in_dev_mode"]
+
+@contextmanager
+def cursor_execute(connection, sql, params=[]):
+    curr = connection.cursor()
+    curr.execute(sql, params)
+    connection.commit()
+    yield curr
+    curr.close()
+
 
 class SteamDB(object):
 
@@ -29,44 +44,11 @@ class SteamDB(object):
         self.top_url = top_url
         self.steam_url = steam_url
         self.missing_ids = Counter()
+        self.debug = debug
 
     def create_tables(self):
-        stmts = ["""
-            create table if not exists steam_apps (
-                id integer,
-                name text,
-                peak_count integer,
-                primary key(id, name)
-            )""",
-            """
-            create table if not exists steam_genres (
-                id integer,
-                genre text,
-                primary key(id, genre)
-            )""",
-            """
-            create table if not exists steam_apps_genres (
-                steam_id integer,
-                genre_id integer,
-                primary key(steam_id, genre_id),
-                foreign key(steam_id) references steam_apps(id),
-                foreign key(genre_id) references genres(id)
-            )""",
-            """
-            create table if not exists steam_last_call (
-                 ts datetime
-            )""",
-            """
-            create table if not exists steam_apps_no_genre (
-                 steam_id integer,
-                 primary key(steam_id),
-                 foreign key(steam_id) references steam_apps(id)
-            )""",
-        ]
-        for s in stmts:
-            curr = self.dbh.cursor()
-            curr.execute(s)
-        self.dbh.commit()
+        for s in schema.schema_statements:
+            cursor_execute(self.dbh, s)
 
 
     def get_element_values(self, elem):
@@ -84,9 +66,8 @@ class SteamDB(object):
         except ValueError:
             return 0
 
-        curr = self.dbh.cursor()
-        curr.execute("""
-                insert or replace into steam_apps (
+        insert_query = """
+            insert or replace into steam_apps (
                     id,
                     name,
                     peak_count
@@ -95,11 +76,10 @@ class SteamDB(object):
                     ?,
                     ?
                 )
-                """,[id, name, peak_count])
-
-        self.dbh.commit()
-        curr.close()
-
+            """
+        params = [id, name, peak_count]
+        with cursor_execute(self.dbh, insert_query, params=params) as curr:
+            return curr.rowcount
 
     def get_current_top_games(self):
         response = requests.get(self.top_url)
@@ -114,9 +94,8 @@ class SteamDB(object):
             for elem in elements:
                 yield elem
 
-    def get_ids(self):
-        curr = self.dbh.cursor()
-        curr.execute("""
+    def get_ids_missing_genres(self):
+        query = """
             select id from steam_apps where not exists (
                 select steam_id
                 from steam_apps_genres
@@ -126,9 +105,10 @@ class SteamDB(object):
                     select steam_id
                     from steam_apps_no_genre
                     where steam_apps_no_genre.steam_id = steam_apps.id)
-                """)
-        self.dbh.commit()
-        return curr
+        """
+        with cursor_execute(self.dbh, query) as curr:
+            for result in curr:
+                yield result[0]
 
 
     def get_genres(self, ids=None, cc=False):
@@ -136,13 +116,10 @@ class SteamDB(object):
         200 requests per 5 minutes and multi-appid support removed.
         """
         if ids == None:
-            ids = self.get_ids()
-            ids = [i[0] for i in ids]
-
-        #results_left = True
+            ids = [ i for i in self.get_ids_missing_genres() ]
 
         counter = 0
-        max_counter = 180
+        max_counter = 190
         max_seconds = 300
 
         def time_check(threshold):
@@ -169,7 +146,7 @@ class SteamDB(object):
                 if not second_check:
                     log =  "got: {0} started at: {1} - waiting"
                     print log.format(counter, str(datetime.now()))
-                    random_extra_seconds = randrange(1, 11)
+                    random_extra_seconds = randrange(1, 9)
                     sleep(max_seconds + random_extra_seconds)
                     counter = 0
 
@@ -207,9 +184,9 @@ class SteamDB(object):
 
     def process_genre(self, response):
         """
-        gather genre info from json
-        if genre doesn't exist insert into db
-        insert steam_id and genre_id into `steam_apps_genres`
+        1. gather genre info from json
+        2. if genre doesn't exist insert into db
+        3. insert steam_id and genre_id into `steam_apps_genres`
         """
         data = None
         response = response.json()
@@ -240,33 +217,31 @@ class SteamDB(object):
 
                 genre_id = int(genre["id"])
                 description = genre["description"]
+                params = [genre_id, description]
+                query = """
+                    select id
+                    from steam_genres
+                    where id = ? and genre = ?
+                """
 
-                curr = self.dbh.cursor()
-                curr.execute("""
-                    insert or replace into steam_genres (
+                found = 0
+                with cursor_execute(self.dbh, query, params=params) as curr:
+                    for row in curr:
+                        found +=1
+
+                if found == 0:
+                    print "new genre found: %s" % description
+                    query = """
+                        insert or replace into steam_genres (
                         id,
                         genre
-
                     ) values (
                         ?,
                         ?
-                    )""", [genre_id, description])
-                #self.dbh.commit()
-                #curr.close()
+                    )"""
 
-                # logging
-                print "%s : %s" % (response_id_int, genre_id)
-                #curr = self.dbh.cursor()
-                curr.execute("""
-                    insert or replace into steam_apps_genres (
-                        steam_id,
-                        genre_id
-                    ) values (
-                         ?,
-                         ?
-                    )""", [response_id_int, genre_id])
-                self.dbh.commit()
-                curr.close()
+                    with cursor_execute(self.dbh, query, params=params) as curr:
+                        inserted = curr.rowcount
 
                 # If we got a response for an id that we initially missed.
                 if response_id in self.missing_ids:
@@ -300,10 +275,10 @@ class SteamDB(object):
         return 1
 
     def set_no_genre(self, steam_id):
-        curr = self.dbh.cursor()
-        curr.execute("""
+        insert_query = """
             insert or replace into steam_apps_no_genre (steam_id) values (?)
-        """, [steam_id])
-        self.dbh.commit()
-        curr.close()
+        """
+        params = [steam_id]
+        with cursor_execute(self.dbh, insert_query, params=params) as curr:
+            return curr.rowcount
 

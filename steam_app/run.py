@@ -2,6 +2,8 @@ from __future__ import absolute_import
 
 import argparse
 import sys
+from timeit import default_timer as timer
+
 from steamdb_v2 import SteamDB
 
 parser = argparse.ArgumentParser()
@@ -23,10 +25,22 @@ if __name__ == "__main__":
         steam.dbh.commit()
 
     if args.top_games:
+        start = timer()
         for elem in steam.get_current_top_games():
             if elem:
                 values = steam.get_element_values(elem)
                 steam.process_id(values[0], values[1], values[2])
+        end = timer()
+        print "top_games() execution time: {elapsed}".format(elapsed=(end-start))
+
     if args.genres:
+        start = timer()
         steam.get_genres()
+        end = timer()
+        print "get_genres() execution time: {elapsed}".format(elapsed=(end-start))
+
+        start = timer()
         steam.check_other_territories()
+        end = timer()
+        print "check_other_territories() execute time: {elapsed}".format(elapsed=(end-start))
+

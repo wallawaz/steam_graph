@@ -6,43 +6,28 @@ import os
 import yaml
 
 import flask
+from flask import g
+from time import sleep
+
 import simplejson as json
-#from sqlalchemy import create_engine
 import sqlite3
 import requests
 
-
-from contextlib import contextmanager
 from queries import queries
 from datetime import datetime
+import steamdb_v2
 
-
-config = {}
-with open(os.environ.get("STEAM_CONFIG", "/etc/steam/steam.yaml")) as f:
-    config = yaml.load(f)
-
+steam = steamdb_v2.SteamDB()
 
 app = flask.Flask(
-    # __name__,
     "steamdb",
     template_folder="templates",
     static_folder="static",
 )
 
-def connect():
-    """connect to sqlite db with steam data"""
-    url = config["db"]["main_url"]
-    return sqlite3.connect(url, check_same_thread=False)
-
-
-@contextmanager
-def cursor_execute(connection, sql):
-    curr = connection.cursor()
-    curr.execute(sql)
-    connection.commit()
-    yield curr
-    curr.close()
-
+cursor_execute = steamdb_v2.cursor_execute
+DETAILS_COUNTER = 0
+DETAILS_MAX = 60
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -116,11 +101,14 @@ def as_of():
     return json.dumps(result)
 
 
-# TODO need to log each call to make sure we don't overload
 @app.route("/details/<id>")
 def details(id):
+
+    # the will pause the request if DETAILS COUNTER == MAX
+    api_counter()
+
     id = str(id)
-    url = "http://store.steampowered.com/api/appdetails?appids=" + id
+    url = steam.steam_url + id
     response = requests.get(url)
     if response.status_code != 200:
         return json.dumps({
@@ -150,6 +138,27 @@ def details(id):
     return json.dumps(out)
 
 
+def api_counter():
+    global DETAILS_COUNTER
+    global DETAILS_MAX
+
+    DETAILS_COUNTER += 1
+
+    print DETAILS_COUNTER
+
+    less_than = DETAILS_COUNTER <= DETAILS_MAX
+
+    if less_than:
+        return less_than
+    else:
+        while not less_than:
+            print "pausing 1 second and decreasing counter by 1"
+            sleep(1.08)
+            DETAILS_COUNTER -= 1
+            less_than = DETAILS_COUNTER <= DETAILS_MAX
+        return less_than
+
+
 @app.route("/")
 def index():
     if app.debug:
@@ -157,9 +166,9 @@ def index():
     return flask.render_template("prod.html")
 
 if __name__ == "__main__":
-    connection = connect()
+    connection = sqlite3.connect(steamdb_v2.db_path, check_same_thread=False)
     app.run(
         host="0.0.0.0",
         port=5000,
-        debug=config["general"]["in_dev_mode"],
+        debug=steam.debug
     )
