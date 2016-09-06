@@ -1,0 +1,4 @@
+tr { display: block }
+th, td { width: 100px; }
+tbody { display: block; height: 150px; overflow: auto; }
+

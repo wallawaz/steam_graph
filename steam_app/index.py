@@ -144,7 +144,7 @@ def api_counter():
 
     DETAILS_COUNTER += 1
 
-    print DETAILS_COUNTER
+    #print DETAILS_COUNTER
 
     less_than = DETAILS_COUNTER <= DETAILS_MAX
 
