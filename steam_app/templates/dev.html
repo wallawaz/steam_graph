@@ -11,14 +11,10 @@
 
 <link rel="stylesheet" type="text/css" href="../static/custom.css">
 
-<!--jQuery for Bootstrap-->
-<script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
-
 <!--D3v3-->
 <script type="text/javascript" src="../static/d3.v3.min.js"></script>
-<!--<script type="text/javascript" src="../static/steamDetails.js"></script>-->
-
 <script src="https://use.fontawesome.com/e6d63fb807.js"></script>
+<script type="text/javascript" src="../static/steamDetails.js"></script>
 <style type="text/css">
 
     #tooltip {
@@ -59,10 +55,6 @@
     #topBox.hidden {
         display: none;
     }
-    #asOfBox {
-        position: fixed;
-    }
-
     #steamDetailsBox {
         position: absolute;
         width: auto;
@@ -74,17 +66,29 @@
     #steamDetailsBox.hidden {
         display: none;
     }
+
+    .axis {
+      font: 10px sans-serif;
+    }
+
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+
+    .x.axis path {
+      display: none;
+    }
 </style>
 </head>
 <body>
     <div id="tooltip" class="hidden">
         <p><span id="genreName"></span></p>
-        <p><span style="border:1.5px solid blue;" id="value">0</span></p>
+        <!--<p><span style="border:1.5px solid blue;" id="value">0</span></p>-->
     </div>
     <div id="topBox" class="container"></div>
-    <div id="asOfBox">
-        <p><span id="ts" style="solid blue;"></span></p>
-    </div>
     <div id="steamDetailsBox" class="container">
         <div id="headerImage" class="row">
             <div class="col-md-10"></div>
@@ -104,7 +108,7 @@
         </div>
     </div>
         <script type="text/javascript">
-            var margin = { top: 60, right: 20, bottom: 80, left: 20 };
+            var margin = { top: 60, right: 20, bottom: 100, left: 20 };
 
             var h = 500 + margin.top + margin.bottom;
             var w = 1200 + margin.left + margin.right;
@@ -121,232 +125,25 @@
                 .attr("width", w)
                 .attr("height", h);
 
-
-            //XXX todo change columns to be an object where you pass in a format for each column.
-            var array2Table = function(data, columns_obj) {
-
-                var solidBlack = function(d3Obj) {
-                    d3Obj.style("border", "1.4px solid black")
-                };
-                d3.select("#topBox").selectAll("table").remove()
-                var table = d3.select("#topBox").append("table")
-                              //.style("border-collapse", "collapse")
-                              .classed("table", true)
-                              .classed("table-hover", true)
-                              .classed("table-condensed", true)
-                              .attr("align", "center");
-
-
-                var thead = table.append("thead");
-                var tbody = table.append("tbody");
-
-                solidBlack(table);
-
-                thead.append("tr")
-                    .selectAll("th")
-                    .data(columns_obj)
-                    .enter()
-                    .append("th")
-                    .text(function(d) { return d["column"]; })
-                    .each(function(d) {
-                            var th = d3.select(this);
-                            solidBlack(th);
-                            var styles = d["styles"];
-                            if (styles) {
-                                styles.forEach(function(s) {
-                                    th.style(s[0], s[1]);
-                                })
-                            }
-                        });
-
-                //row for each object in arr
-                var rows = tbody.selectAll("tr")
-                        .data(data)
-                        .enter()
-                        .append("tr")
-                        .attr("rowid", function(d) { return d.id; })
-                        .attr("chosen", false)
-                        .attr("onclick", function(d) {
-                                return "steamDetails(" + d.id + ")";
-                        });
-
-                var cells = rows.selectAll("td")
-                    .data(function(row) {
-                          return columns_obj.map(function(col_obj) {
-                              return {
-                                        column: col_obj["column"],
-                                        value: row[col_obj["column"]],
-                                        styles: col_obj["styles"],
-                                        format: col_obj["format"]
-                              }
-                          });
-                    })
-                    .enter()
-                    .append("td")
-                    .text(function(d) {
-                          if (d["format"]) {
-                            return d["format"](d["value"]);
-                          }
-                          else { return d["value"]; }
-                    })
-                    .each(function(d) {
-                            var td = d3.select(this);
-                            solidBlack(td);
-                            var styles = d["styles"];
-                            if (styles) {
-                                //console.log(styles);
-                                styles.forEach(function(s) {
-                                    td.style(s[0], s[1]);
-                                })
-                            }
-                        });
-                return table
-            }
-
-            var steamDetails = function(id) {
-                console.log(STEAM_ID);
-                if (parseInt(id) === STEAM_ID) {
-                    console.log("id: " + id + " just checked.");
-                    return 0;
-                }
-                else { STEAM_ID = parseInt(id); }
-
-                console.log("hitting /details");
-                var url = "/details/" + id;
-
-                d3.json(url, function(error, json) {
-                    if (error) {
-                        console.log(error);
-                    }
-                    else {
-
-                        var u = json["header_image"];
-                        var ending = u.match("\.jpg.*")[0];
-                        var header_url = u.replace(ending, ".jpg");
-
-                        //var currentTopBox = d3.select("#topBox").node();
-                        //var currentTopBoxStyle = currentTopBox["style"];
-                        ///var cssText = currentTopBoxStyle["cssText"];
-
-                        var detailsBoxLeft = Math.floor(0.7 * w);
-                        var detailsBoxHeight = Math.floor(0.1 * h);
-                        var px = "px";
-
-                        var detailsBox = d3.select("#steamDetailsBox")
-                            .style("left", detailsBoxLeft + px)
-                            .style("top", detailsBoxHeight + px);
-
-                        detailsBox.select("#headerImage").selectAll("img").remove();
-                        detailsBox.select("#platforms").selectAll("i").remove();
-                        detailsBox.select("#metacritic").selectAll("a").remove();
-
-                        var headerImageContent = d3.select("#headerImage").select(".col-md-10")
-                            .append("img")
-                            .attr("src", header_url)
-                            .classed("img-responsive", true);
-
-                        var platforms = json["platforms"];
-                        if (platforms) {
-
-                            var platformMappings = {
-                                "windows": "fa fa-windows",
-                                "linux": "fa fa-linux",
-                                "mac": "fa fa-apple",
-                            }
-
-                            for (var i in platforms) {
-                                if (platforms[i]) {
-                                    var platformClass = platformMappings[i];
-
-                                    detailsBox.select("#platforms").select(".col-md-10")
-                                        .append("i")
-                                        .classed(platformClass, true)
-                                        .attr("aria-hidden", "true")
-                                }
-                            }
-                        }
-                        var metacritic = json["metacritic"];
-                        if (metacritic) {
-                            var score = metacritic["score"];
-                            var metacriticUrl = metacritic["url"];
-
-                            detailsBox.select("#metacritic").select(".col-md-10").select("#metacriticScore")
-                                .append("a")
-                                .attr("href", metacriticUrl)
-                                .html("Metascore: " + score);
-                        }
-                        detailsBox.classed("hidden", false);
-                    }
-                })
-            };
-
-            var loadGraph = function() {
-                //console.log("--in-loadGraph()--");
-                var xScale = d3.scale.ordinal()
-                    .domain(d3.range(initialData.length))
-                    .rangeRoundBands([0, w - (margin["left"] + margin["right"])], 0.05);
-
-                var yScale = d3.scale.linear()
-                    .domain([0, d3.max(totals, function(d) { return d; })])
-                    .range([0, h - (margin["top"] + margin["bottom"])]);
-
-                var bars = svg.selectAll("rect")
-                    .data(initialData)
-                    .enter()
-                    .append("rect")
-                    .attr("x", function(d, i) {
-                        return xScale(i);
-                    })
-                    .attr("y", function(d) {
-                        return h - margin["bottom"] - margin["top"] -  yScale(d[2]); // each data element is an array of [genre_id, genre_name, count]
-                    })
-                    .attr("width", xScale.rangeBand())
-                    .attr("height", function(d) {
-                        return yScale(d[2]);
-                    })
-                    .attr("fill", function(d, i) {
-                            return colors(i);
-                    })
-                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-                    .on("mouseover", function(d) {
-                            var xPos = parseFloat(d3.select(this).attr("x")) + xScale.rangeBand();
-                            var yPos = parseFloat(d3.select(this).attr("y")) + 10;
-                            var px = "px";
-                            var lengthOfName = d[1].length;
-                            var lengthOfValue = String(d[1]).length;
-                            //console.log([lengthOfName, lengthOfValue]);
-
-                            d3.select("#tooltip")
-                                .style("left", xPos + px)
-                                .style("top", yPos + px)
-                                .style("width", (lengthOfName + lengthOfValue) * 8 + px)
-                                .select("#genreName")
-                                .text(d[1]);
-                            d3.select("#tooltip").select("#value")
-                                .text(numericFormat(d[2]));
-
-                            d3.select("#tooltip").classed("hidden", false);
-                    });
-                    return bars;
-                };
             d3.json("/as_of", function(error, json) {
-                    var ts = json["ts"];
-                    ts = ts[0];
+                var ts = json["ts"];
+                ts = ts[0];
 
-                    var message = "Results as of " + ts;
-                    var px = "px";
+                var message = "Results as of " + ts;
+                var messageData = [message];
 
-                    var xPos = Math.floor(0.68 * w) + px;
-                    var yPos = (h - margin["bottom"] + 6) + px;
+                svg.selectAll("text.title")
+                  .data(messageData)
+                  .enter()
+                  .append("text")
+                  .text(message)
+                  .attr("x", w - margin["right"] * 10)
+                  .attr("y", h - (margin["bottom"] / 2.5))
+                  .attr("text-anchor", "right")
+                  .attr("font-family", "sans-serif")
+                  .attr("font-size", "11px")
+            });
 
-                    d3.select("#asOfBox")
-                        .style("left", xPos)
-                        .style("top", yPos)
-                        .style("width", message.length * 10 + px);
-
-                    d3.select("#asOfBox").select("#ts")
-                        .text(message);
-                    });
 
             d3.json("/list", function(error, json) {
                 for (var i in json.genres) {
@@ -354,8 +151,24 @@
                     totals.push(parseInt(json.genres[i][2]));
                     initialData.push(json.genres[i]);
                 }
-                var b = loadGraph()
-                b.on("click", function(d) {
+                var results = loadGraph();
+                var xScale = results[0];
+                var bars = results[1];
+                var valueLabels = results[2];
+                var genreLabels = results[3];
+                console.log(genreLabels);
+
+                /*var xAxis = d3.svg.axis();
+                xAxis.scale(xScale)
+                .orient("bottom");
+
+                svg.append("g")
+                  .attr("class", "axis")
+                  .attr("transform", "translate(0, " + (h - margin["bottom"]) + ")")
+                  .call(xAxis);
+                */
+
+                bars.on("click", function(d) {
                     var genre_id = d[0];
                     var data = [];
                     var myColor = d3.select(this).style("fill");
@@ -399,8 +212,6 @@
                             .style("background-color", myColor)
                             .style("left", topBoxLeft + px)
                             .style("top", topBoxHeight + px);
-                        //    .style("width", topBoxWidth + px)
-                        //    .style("height", topBoxHeight + px)
                         d3.select("#topBox").classed("hidden", false);
                         d3.select("#steamDetailsBox").classed("hidden", true);
                     });
