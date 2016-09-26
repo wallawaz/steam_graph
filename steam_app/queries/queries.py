@@ -11,8 +11,10 @@ genre_counts = """
 
     group by
         a.genre
+    having
+	sum(peak_count) >= 1000
     order by
-        1
+        2
 """
 
 genre_top_games = """

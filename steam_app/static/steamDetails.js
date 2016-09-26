@@ -122,6 +122,15 @@ var steamDetails = function(id) {
     }
     else { STEAM_ID = parseInt(id); }
 
+    STEAM_COUNTER += 1;
+    if (STEAM_COUNTER > 100 && STEAM_COUNTER <= 150) {
+	console.log("approaching the steam api threshold: " + STEAM_COUNTER);
+        return 0;
+    }
+    if (STEAM_COUNTER > 150) {
+        STEAM_COUNTER = 0;
+    }
+
     console.log("hitting /details");
     var url = "/details/" + id;
 
@@ -233,26 +242,26 @@ var loadGraph = function() {
         .attr("fill", function(d, i) {
                 return colors(i);
         })
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-        .on("mouseover", function(d) {
-                var xPos = parseFloat(d3.select(this).attr("x")) + xScale.rangeBand();
-                var yPos = parseFloat(d3.select(this).attr("y")) + 10;
-                var px = "px";
-                var lengthOfName = d[1].length;
-                var lengthOfValue = String(d[1]).length;
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        //.on("mouseover", function(d) {
+        //        var xPos = parseFloat(d3.select(this).attr("x")) + xScale.rangeBand();
+        //        var yPos = parseFloat(d3.select(this).attr("y")) + 10;
+        //        var px = "px";
+        //        var lengthOfName = d[1].length;
+        //        var lengthOfValue = String(d[1]).length;
 
-                d3.select("#tooltip")
-                    .style("left", xPos + px)
-                    .style("top", yPos + px)
-                    .style("width", (lengthOfName + lengthOfValue) * 8 + px)
-                    .select("#genreName")
-                    .text(d[1]);
+        //        d3.select("#tooltip")
+        //            .style("left", xPos + px)
+        //            .style("top", yPos + px)
+        //            .style("width", (lengthOfName + lengthOfValue) * 8 + px)
+        //            .select("#genreName")
+        //            .text(d[1]);
 
                 //d3.select("#tooltip").select("#value")
                 //    .text(numericFormat(d[2]));
                     //
-                d3.select("#tooltip").classed("hidden", false);
-        });
+        //        d3.select("#tooltip").classed("hidden", false);
+        //});
         //labels
         var valueLabels = svg.selectAll("text.value")
           .data(initialData)

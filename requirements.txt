@@ -3,3 +3,4 @@ flask
 pyyaml
 requests
 simplejson
+uwsgi

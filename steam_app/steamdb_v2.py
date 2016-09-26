@@ -40,7 +40,7 @@ def cursor_execute(connection, sql, params=[]):
 class SteamDB(object):
 
     def __init__(self):
-        self.dbh = sqlite3.connect(db_path)
+        self.dbh = sqlite3.connect(db_path, check_same_thread=False)
         self.top_url = top_url
         self.steam_url = steam_url
         self.missing_ids = Counter()
@@ -174,6 +174,7 @@ class SteamDB(object):
                     curr.close()
 
                 response = requests.get(url)
+                time.sleep(1)
 
                 if response.status_code != 200:
                 # logging
@@ -223,13 +224,9 @@ class SteamDB(object):
                     from steam_genres
                     where id = ? and genre = ?
                 """
-
-                found = 0
-                with cursor_execute(self.dbh, query, params=params) as curr:
-                    for row in curr:
-                        found +=1
-
-                if found == 0:
+                curr = self.dbh.cursor()
+                found = curr.execute(query, params).fetchone()
+                if found is None:
                     print "new genre found: %s" % description
                     query = """
                         insert or replace into steam_genres (
@@ -242,6 +239,19 @@ class SteamDB(object):
 
                     with cursor_execute(self.dbh, query, params=params) as curr:
                         inserted = curr.rowcount
+
+                insert_params = [response_id_int, genre_id]
+                insert_query = """
+                    insert or replace into steam_apps_genres (
+                        steam_id,
+                        genre_id
+                    ) values (
+                        ?,
+                        ?
+                    )"""
+                with cursor_execute(self.dbh, insert_query, params=insert_params) as curr:
+                        inserted = curr.rowcount
+                        print "inserted %s in steam_apps_genres" % inserted
 
                 # If we got a response for an id that we initially missed.
                 if response_id in self.missing_ids:
