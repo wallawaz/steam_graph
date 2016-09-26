@@ -1,4 +1,49 @@
-tr { display: block }
-th, td { width: 100px; }
-tbody { display: block; height: 150px; overflow: auto; }
+table { 
+    table-layout: fixed;
+}
+/*
+table th, table td {
+    overflow: hidden;
+}
+*/
 
+#topGamesContent {
+padding-left: 225px;
+padding-top: 30px;
+font-family: sans-serif;
+font-size: 11px;
+line-height: 10px;
+}
+
+#steamDetailsBox {
+    /*position: relative;*/
+    width: auto;
+    height: auto;
+    font-family: sans-serif;
+    font-size: 11px;
+    text-align: center;
+    padding-top: 20px;
+}
+#steamDetailsBox.hidden {
+    display: none;
+}
+#platforms, #metacritic {
+    padding-top: 10px;
+}
+tbody {
+    overflow: auto;
+}
+tr {
+
+    width: 100%;
+}
+th {
+    width: 100%;
+}
+td {
+    width: 100%;
+}
+img {
+   padding:1px;
+   border:1px solid #021a40;
+}

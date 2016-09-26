@@ -1,18 +1,49 @@
+var fadeInOut = function(fadeIn, d3Selection, durationTime) {
+    if (fadeIn === "in") {
+        var start = 0;
+        var end = 1;
+    }
+    else if (fadeIn === "out") {
+        var start = 1;
+        var end = 0;
+    }
+    else {
+        return;
+    }
+
+    d3.select(d3Selection)
+        .style("opacity", start)
+        .transition()
+        .duration(durationTime)
+        .style("opacity", end);
+}
+
 var array2Table = function(data, columns_obj) {
 
     var solidBlack = function(d3Obj) {
         d3Obj.style("border", "1.4px solid black")
     };
+    d3.select("#topGamesContent").select("#topGames").html("");
 
-    d3.select("#topBox").selectAll("table").remove()
-    var table = d3.select("#topBox").append("table")
-                  //.style("border-collapse", "collapse")
-                  .classed("table", true)
-                  .classed("table-hover", true)
-                  .classed("table-condensed", true)
-                  .attr("align", "center");
+    //var tableSvg = d3.select("#topBoxContent")
+    //    .append("svg")
+    //        .attr("width", w/2
+    //        .attr("height", h/2 + margin.top + margin.bottom)
+    //    .append("g")
+    //        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    //var table = .select("#topBoxContent").append("table")
 
+    //var tableDiv = d3.select("#topGamesContent")
+    //                  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    var table = d3.select("#topGamesContent").select("#topGames");
+
+    //var table = tableSvg.append("table")
+    //              //.style("border-collapse", "collapse")
+    //              .classed("table", true)
+    //              .classed("table-hover", true)
+    //              .classed("table-condensed", true)
+    //              .attr("align", "center");
     var thead = table.append("thead");
     var tbody = table.append("tbody");
 
@@ -76,7 +107,11 @@ var array2Table = function(data, columns_obj) {
                     })
                 }
             });
-    return table
+
+    console.log(table);
+    //fadeInOut("out", "#topGamesContent", 0);
+    fadeInOut("in", "#topGamesContent", 500);
+    //  return table
 }
 
 var steamDetails = function(id) {
@@ -104,23 +139,26 @@ var steamDetails = function(id) {
             //var currentTopBoxStyle = currentTopBox["style"];
             ///var cssText = currentTopBoxStyle["cssText"];
 
-            var detailsBoxLeft = Math.floor(0.7 * w);
-            var detailsBoxHeight = Math.floor(0.1 * h);
-            var px = "px";
+            //var detailsBoxLeft = Math.floor(0.7 * w);
+            //var detailsBoxHeight = Math.floor(0.1 * h);
+            //var px = "px";
 
-            var detailsBox = d3.select("#steamDetailsBox")
-                .style("left", detailsBoxLeft + px)
-                .style("top", detailsBoxHeight + px);
+            var detailsBox = d3.select("#steamDetailsBox");
+            //    .style("left", detailsBoxLeft + px)
+            //    .style("top", detailsBoxHeight + px);
 
             detailsBox.select("#headerImage").selectAll("img").remove();
+
             detailsBox.select("#platforms").selectAll("i").remove();
             detailsBox.select("#metacritic").selectAll("a").remove();
 
-            var headerImageContent = d3.select("#headerImage").select(".col-md-10")
-                .append("img")
-                .attr("src", header_url)
-                .classed("img-responsive", true);
-
+            var headerImageContent = detailsBox.select("#headerImage")
+                    .append("img")
+                    .attr("src", header_url)
+                    .classed("image-responsive", true)
+                    .style("width", "90%")
+                    .style("border", "2px");
+                
             var platforms = json["platforms"];
             if (platforms) {
 
@@ -134,10 +172,11 @@ var steamDetails = function(id) {
                     if (platforms[i]) {
                         var platformClass = platformMappings[i];
 
-                        detailsBox.select("#platforms").select(".col-md-10")
+                        detailsBox.select("#platforms")
                             .append("i")
                             .classed(platformClass, true)
                             .attr("aria-hidden", "true")
+                            .style("padding", "2px");
                     }
                 }
             }
@@ -146,17 +185,22 @@ var steamDetails = function(id) {
                 var score = metacritic["score"];
                 var metacriticUrl = metacritic["url"];
 
-                detailsBox.select("#metacritic").select(".col-md-10").select("#metacriticScore")
+                detailsBox.select("#metacritic").select("#metacriticScore")
                     .append("a")
                     .attr("href", metacriticUrl)
                     .html("Metascore: " + score);
             }
             detailsBox.classed("hidden", false);
+            fadeInOut("in", "#steamDetailsBox", 400);
+            //var classed = d3.select("#steamDetailsBox").attr("class");
+            //console.log(classed);
+
         }
     })
 };
 
 var loadGraph = function() {
+
     var barPadding = 1;
     var xScale = d3.scale.ordinal()
         .domain(initialData.map(function(d) { return d[1]; }))
@@ -216,8 +260,7 @@ var loadGraph = function() {
           .append("text")
           .text(function(d) { return numericFormat(d[2]); })
           .attr("x", function(d, i) {
-              var bandWidth = xScale.rangeBand() / 12;
-              var extraPadding = margin.left + margin.right + bandWidth;
+              var extraPadding = margin.left + margin.right;
               return xScale(d[1]) + extraPadding;
           })
           .attr("y", function(d, i) {
