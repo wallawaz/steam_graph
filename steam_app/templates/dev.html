@@ -41,34 +41,8 @@
         font-size: 10px;
         line-height: 20px;
     }
-
-    #topBox {
-        position: absolute;
-        width: auto;
-        height: auto;
-        padding: 10px;
-        font-family: sans-serif;
-        font-size: 11px;
-        line-height: 10px;
-    }
-
-    #topBox.hidden {
-        display: none;
-    }
-    #steamDetailsBox {
-        position: absolute;
-        width: auto;
-        height: auto;
-        font-family: sans-serif;
-        font-size: 11px;
-        text-align: center;
-    }
-    #steamDetailsBox.hidden {
-        display: none;
-    }
-
     .axis {
-      font: 10px sans-serif;
+      font: 9px sans-serif;
     }
 
     .axis path,
@@ -86,44 +60,46 @@
 <body>
     <div id="tooltip" class="hidden">
         <p><span id="genreName"></span></p>
-        <!--<p><span style="border:1.5px solid blue;" id="value">0</span></p>-->
     </div>
-    <div id="topBox" class="container"></div>
-    <div id="steamDetailsBox" class="container">
-        <div id="headerImage" class="row">
-            <div class="col-md-10"></div>
-        </div>
-        <div id="platforms" class="row">
-            <!--
-            <i id="linux-icon" class="fa fa-linux" aria-hidden="true"></i>
-            <i id="windows-icon" class="fa fa-windows" aria-hidden="true"></i>
-            <i id="apple-icon" class="fa fa-apple" aria-hidden="true"></i>
-            -->
-            <div class="col-md-10"></div>
-        </div>
-        <div id="metacritic" class="row">
-            <div class="col-md-10">
-                <p><span id="metacriticScore"></span></p>
+    <div class="container">
+        <div class="row">
+            <div id="graphContent" class="col-md-6"></div>
+            <div id="topGamesContent" class="col-md-6">
+                <div style="overflow: auto; height: 200px; width: 350px;">
+                    <table id="topGames" class="table"></table>
+                </div>
+                <div class="row-fluid">
+                    <div id="steamDetailsBox" class="col-md-3">
+                        <div id="headerImage" class="span12 pagination-centered"></div>
+                        <div id="platforms" class="span12 pagination-centered"></div>
+                        <div id="metacritic" class="span12 pagination-centered">
+                            <p><span id="metacriticScore"></span></p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
         <script type="text/javascript">
-            var margin = { top: 60, right: 20, bottom: 100, left: 20 };
+            var margin = { top: 60, right: 20, bottom: 100, left: 5};
 
-            var h = 500 + margin.top + margin.bottom;
-            var w = 1200 + margin.left + margin.right;
+            var h = 700 - margin.top - margin.bottom;
+            var w = screen.width/1.5 - margin.left - margin.right;
+            console.log(w);
             var countTotal = 0;
 
-            var colors = d3.scale.category20();
+            var colors = d3.scale.category20c();
             var numericFormat = d3.format(',');
             var initialData = [];
             var totals = [];
             var STEAM_ID = 0;
 
-            var svg = d3.selectAll("body")
+            var svg = d3.select("#graphContent")
                 .append("svg")
-                .attr("width", w)
-                .attr("height", h);
+                .attr("width", w + margin.left + margin.right)
+                .attr("height", h + margin.top + margin.bottom)
+                .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
             d3.json("/as_of", function(error, json) {
                 var ts = json["ts"];
@@ -141,7 +117,21 @@
                   .attr("y", h - (margin["bottom"] / 2.5))
                   .attr("text-anchor", "right")
                   .attr("font-family", "sans-serif")
-                  .attr("font-size", "11px")
+                  .attr("font-size", "11px");
+
+
+                message2 = "Click on any game category to display its top 10 games being played";
+                messageData = [message];
+
+                svg.selectAll("text-title")
+                    .data(messageData2)
+                    .append("text")
+                    .text(message2)
+                    .attr("x", w - margin["right"] * 10)
+                    .attr("y", h - margin["bottom"])
+                    .attr("text-anchor", "right")
+                    .attr("font-family", "sans-serif")
+                    .attr("font-size", "11px");
             });
 
 
@@ -156,17 +146,7 @@
                 var bars = results[1];
                 var valueLabels = results[2];
                 var genreLabels = results[3];
-                console.log(genreLabels);
 
-                /*var xAxis = d3.svg.axis();
-                xAxis.scale(xScale)
-                .orient("bottom");
-
-                svg.append("g")
-                  .attr("class", "axis")
-                  .attr("transform", "translate(0, " + (h - margin["bottom"]) + ")")
-                  .call(xAxis);
-                */
 
                 bars.on("click", function(d) {
                     var genre_id = d[0];
@@ -176,15 +156,18 @@
                         for (var i in json.top_games) {
                             data.push(json.top_games[parseInt(i)]);
                         }
-                        var displayNone = ["display", "none"];
-
                         var columns = [
-                            {column: "rank", styles: [], format: ""},
-                            {column: "id", styles: [], format: ""},
-                            {column: "game", styles: [], format: ""},
-                            {column: "players", styles: [["text-align","right"]], format: numericFormat }
+                            {column: "rank", styles: [["width", "15%"],
+                                                      ["text-align", "left"]],
+                                                      format: ""},
+                            {column: "id", styles: [
+                                            ["display", "none"],
+                                            ["width", "0%"]], format: ""},
+                            {column: "game", styles: [["width", "65%"]], format: ""},
+                            {column: "players", styles: [["width", "20%"],["text-align","right"]], format: numericFormat }
                         ];
-                        var topGamesTable = array2Table(data, columns);
+                        array2Table(data, columns);
+                        /*
                         var innerHTML = topGamesTable.html()
                         var rows = innerHTML.match(/<tr (.*?)<\/tr>/g);
                         var maxRow = "";
@@ -206,14 +189,13 @@
                         }
                         if (topBoxWidth < arbitraryWidth) {
                             topBoxWidth = arbitraryWidth;
-                        }
-                        console.log(topBoxWidth);
-                        d3.select("#topBox")
-                            .style("background-color", myColor)
-                            .style("left", topBoxLeft + px)
-                            .style("top", topBoxHeight + px);
-                        d3.select("#topBox").classed("hidden", false);
-                        d3.select("#steamDetailsBox").classed("hidden", true);
+                            }
+                         */
+                        d3.select("#topGames")
+                            .style("background-color", myColor);
+                        fadeInOut("out", "#steamDetailsBox");
+                        //d3.select("#steamDetailsBox")
+                        //    .classed("hidden", true);
                     });
                 });
             });
