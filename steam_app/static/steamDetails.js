@@ -110,7 +110,7 @@ var array2Table = function(data, columns_obj) {
 
     console.log(table);
     //fadeInOut("out", "#topGamesContent", 0);
-    fadeInOut("in", "#topGamesContent", 500);
+    fadeInOut("in", "#topGamesContent", 400);
     //  return table
 }
 

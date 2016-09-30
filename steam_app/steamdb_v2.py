@@ -90,8 +90,10 @@ class SteamDB(object):
 
         else:
             soup = BeautifulSoup(response.text, "html.parser")
-            elements = soup.find_all(class_ = "app hidden")
-            for elem in elements:
+            elements = soup.find_all(class_ = "app")
+            elements_hidden = soup.find_all(class_ = "app hidden")
+            elements_all = elements + elements_hidden
+            for elem in elements_all:
                 yield elem
 
     def get_ids_missing_genres(self):
@@ -164,14 +166,9 @@ class SteamDB(object):
 
                 if counter == 1:
                     now = datetime.now()
-                    curr = self.dbh.cursor()
                     # logging
                     print "Starting %s at: %s" % (max_counter, str(now))
-                    curr.execute("delete from steam_last_call")
-                    curr.execute("insert into steam_last_call (ts) values (?)"
-                                , [now])
-                    self.dbh.commit()
-                    curr.close()
+                    self.update_last_call()
 
                 response = requests.get(url)
                 time.sleep(1)
@@ -182,6 +179,15 @@ class SteamDB(object):
                                                      response.status_code)
                 else:
                     self.process_genre(response)
+
+    def update_last_call(self):
+        """update the last_call made to steam"""
+        now = datetime.now()
+        curr = self.dbh.cursor()
+        curr.execute("delete from steam_last_call")
+        curr.execute("insert into steam_last_call (ts) values (?)", [now])
+        self.dbh.commit()
+        curr.close()
 
     def process_genre(self, response):
         """

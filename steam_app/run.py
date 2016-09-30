@@ -31,6 +31,7 @@ if __name__ == "__main__":
                 values = steam.get_element_values(elem)
                 steam.process_id(values[0], values[1], values[2])
         end = timer()
+        steam.update_last_call()
         print "top_games() execution time: {elapsed}".format(elapsed=(end-start))
 
     if args.genres:

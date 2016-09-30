@@ -150,6 +150,7 @@
 
 
                 bars.on("click", function(d) {
+                    fadeInOut("out", "#steamDetailsBox", 400);
                     var genre_id = d[0];
                     var data = [];
                     var myColor = d3.select(this).style("fill");
@@ -192,11 +193,7 @@
                             topBoxWidth = arbitraryWidth;
                             }
                          */
-                        d3.select("#topGames")
-                            .style("background-color", myColor);
-                        fadeInOut("out", "#steamDetailsBox");
-                        //d3.select("#steamDetailsBox")
-                        //    .classed("hidden", true);
+                        d3.select("#topGames").style("background-color", myColor);
                     });
                 });
             });
