@@ -47,8 +47,11 @@ class SteamDB(object):
         self.debug = debug
 
     def create_tables(self):
+        results = []
         for s in schema.schema_statements:
-            cursor_execute(self.dbh, s)
+            with cursor_execute(self.dbh, s) as curr:
+                results.append(curr.rowcount)
+        return results
 
 
     def get_element_values(self, elem):
@@ -58,6 +61,17 @@ class SteamDB(object):
         peak_count = elem[7]["data-sort"]
         return (id, name, peak_count)
 
+
+    def time_check(self, threshold):
+        curr = self.dbh.cursor()
+        ts = curr.execute("select ts from steam_last_call").fetchone()
+        ts = ts[0]
+        dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S.%f")
+        seconds = (datetime.now() - dt).seconds
+        #print seconds
+        if seconds >= threshold:
+	    return True
+        return False
 
     def process_id(self, id, name, peak_count):
         try:
@@ -124,19 +138,9 @@ class SteamDB(object):
         max_counter = 190
         max_seconds = 300
 
-        def time_check(threshold):
-            curr = self.dbh.cursor()
-            ts = curr.execute("select ts from steam_last_call").fetchone()
-            ts = ts[0]
-            dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S.%f")
-            seconds = (datetime.now() - dt).seconds
-            if seconds <= threshold:
-                return False
-            return True
-
         first_check = False
         while not first_check:
-            first_check = time_check(max_seconds)
+            first_check = self.time_check(max_seconds)
             # logging
             if not first_check:
                 print "already ran genres within threshold - pausing 1 min"
@@ -144,7 +148,7 @@ class SteamDB(object):
 
         for i in ids:
             if counter == max_counter:
-                second_check = time_check(max_seconds)
+                second_check = self.time_check(max_seconds)
                 if not second_check:
                     log =  "got: {0} started at: {1} - waiting"
                     print log.format(counter, str(datetime.now()))
@@ -242,7 +246,6 @@ class SteamDB(object):
                         ?,
                         ?
                     )"""
-
                     with cursor_execute(self.dbh, query, params=params) as curr:
                         inserted = curr.rowcount
 
@@ -256,8 +259,8 @@ class SteamDB(object):
                         ?
                     )"""
                 with cursor_execute(self.dbh, insert_query, params=insert_params) as curr:
-                        inserted = curr.rowcount
-                        print "inserted %s in steam_apps_genres" % inserted
+                    inserted = curr.rowcount
+                    print "inserted %s in steam_apps_genres: %s, %s" % (inserted, response_id, genre_id)
 
                 # If we got a response for an id that we initially missed.
                 if response_id in self.missing_ids:
@@ -296,5 +299,6 @@ class SteamDB(object):
         """
         params = [steam_id]
         with cursor_execute(self.dbh, insert_query, params=params) as curr:
-            return curr.rowcount
+            inserted = curr.rowcount
+            return inserted
 

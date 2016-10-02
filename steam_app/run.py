@@ -21,7 +21,8 @@ if __name__ == "__main__":
     steam = SteamDB()
 
     if args.tables:
-        steam.create_tables()
+        res = steam.create_tables()
+        print res
         steam.dbh.commit()
 
     if args.top_games:
