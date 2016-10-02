@@ -70,7 +70,7 @@ class SteamDB(object):
         seconds = (datetime.now() - dt).seconds
         #print seconds
         if seconds >= threshold:
-	    return True
+            return True
         return False
 
     def process_id(self, id, name, peak_count):
@@ -148,13 +148,12 @@ class SteamDB(object):
 
         for i in ids:
             if counter == max_counter:
-                second_check = self.time_check(max_seconds)
-                if not second_check:
-                    log =  "got: {0} started at: {1} - waiting"
-                    print log.format(counter, str(datetime.now()))
-                    random_extra_seconds = randrange(1, 9)
-                    sleep(max_seconds + random_extra_seconds)
-                    counter = 0
+                #second_check = self.time_check(max_seconds)
+                log =  "got: {0} started at: {1} - waiting"
+                print log.format(counter, str(datetime.now()))
+                random_extra_seconds = randrange(1, 9)
+                sleep(max_seconds + random_extra_seconds)
+                counter = 0
 
             else:
                 counter += 1
@@ -228,26 +227,30 @@ class SteamDB(object):
 
                 genre_id = int(genre["id"])
                 description = genre["description"]
-                params = [genre_id, description]
-                query = """
-                    select id
-                    from steam_genres
-                    where id = ? and genre = ?
-                """
-                curr = self.dbh.cursor()
-                found = curr.execute(query, params).fetchone()
-                if found is None:
-                    print "new genre found: %s" % description
+
+                if genre_id not in self.genre_cache:
+                    params = [genre_id, description]
                     query = """
-                        insert or replace into steam_genres (
-                        id,
-                        genre
-                    ) values (
-                        ?,
-                        ?
-                    )"""
-                    with cursor_execute(self.dbh, query, params=params) as curr:
-                        inserted = curr.rowcount
+                        select id
+                        from steam_genres
+                        where id = ? and genre = ?
+                    """
+                    curr = self.dbh.cursor()
+                    found = curr.execute(query, params).fetchone()
+                    if found is None:
+                        print "new genre found: %s" % description
+                        query = """
+                            insert or replace into steam_genres (
+                            id,
+                            genre
+                        ) values (
+                            ?,
+                            ?
+                        )"""
+                        with cursor_execute(self.dbh, query, params=params) as curr:
+                            inserted = curr.rowcount
+                    else:
+                        self.genre_cache.add(genre_id)
 
                 insert_params = [response_id_int, genre_id]
                 insert_query = """
@@ -270,6 +273,7 @@ class SteamDB(object):
 
     def other_territories_counter(self):
         send_out_again = []
+        import ipdb; ipdb.set_trace()
         for i in self.missing_ids:
             attempts = self.missing_ids[i]
             if attempts < 4:
@@ -279,19 +283,19 @@ class SteamDB(object):
                 print "%s: checked 4 times ..." % i
                 self.set_no_genre(i)
 
-        if send_out_again:
-            print "steam ids still checked < 4 times. retrying"
-            return send_out_again
-        return None
+        return send_out_again
 
     # continously run...#XXX may to need to fix
     def check_other_territories(self):
         query_again = [True]
         while query_again:
             query_again = self.other_territories_counter()
-            if query_again:
+            ids_left = len(query_again)
+            print "%s ids left that have not checked 3x" % ids_left
+            if ids_left > 0:
                 self.get_genres(query_again, cc=True)
-        return 1
+            else:
+                return 1
 
     def set_no_genre(self, steam_id):
         insert_query = """
