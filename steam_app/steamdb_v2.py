@@ -45,6 +45,7 @@ class SteamDB(object):
         self.steam_url = steam_url
         self.missing_ids = Counter()
         self.debug = debug
+        self.genre_cache = set([])
 
     def create_tables(self):
         results = []
@@ -65,6 +66,8 @@ class SteamDB(object):
     def time_check(self, threshold):
         curr = self.dbh.cursor()
         ts = curr.execute("select ts from steam_last_call").fetchone()
+        if ts is None:
+            return True
         ts = ts[0]
         dt = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S.%f")
         seconds = (datetime.now() - dt).seconds
@@ -273,7 +276,6 @@ class SteamDB(object):
 
     def other_territories_counter(self):
         send_out_again = []
-        import ipdb; ipdb.set_trace()
         for i in self.missing_ids:
             attempts = self.missing_ids[i]
             if attempts < 4:

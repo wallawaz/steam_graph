@@ -197,6 +197,7 @@ var steamDetails = function(id) {
                 detailsBox.select("#metacritic").select("#metacriticScore")
                     .append("a")
                     .attr("href", metacriticUrl)
+                    .attr("target", "_blank")
                     .html("Metascore: " + score);
             }
             detailsBox.classed("hidden", false);
@@ -285,7 +286,11 @@ var loadGraph = function() {
           })
           .attr("text-anchor", "middle")
           .attr("font-family", "sans-serif")
-          .attr("font-size", "11px")
+          .attr("font-size", function(d) {
+                if (d[2] > 999999) {
+                    return "8px";
+                } else { return "10px"; }
+           })
           .attr("font-weight", "bold");
 
         var genreLabels = svg.append("g")
