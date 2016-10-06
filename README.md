@@ -1,4 +1,4 @@
 Steam Graph
 ===========
 
-A D3 application charting the most popular games on steam.
+A D3 chart plotting game popularity on steam
