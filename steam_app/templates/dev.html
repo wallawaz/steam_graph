@@ -169,30 +169,6 @@
                             {column: "players", styles: [["width", "20%"],["text-align","right"]], format: numericFormat }
                         ];
                         array2Table(data, columns);
-                        /*
-                        var innerHTML = topGamesTable.html()
-                        var rows = innerHTML.match(/<tr (.*?)<\/tr>/g);
-                        var maxRow = "";
-                        rows.forEach(function(e) {
-                            if (e.length > maxRow.length) {
-                                maxRow = e;
-                            }
-                        });
-                        var bound = topGamesTable.node();
-                        console.log(maxRow);
-                        var topBoxLeft = Math.floor(.35 * w);
-                        var topBoxHeight = Math.floor(.1 * h);
-                        var topBoxWidth  = Math.floor(maxRow.length * 1.08);
-                        var px = "px";
-                        var arbitraryWidth = (margin["left"] + margin["right"]) * 8.2;
-
-                        if (bound["width"] > topBoxWidth) {
-                            topBoxWidth = bound["width"];
-                        }
-                        if (topBoxWidth < arbitraryWidth) {
-                            topBoxWidth = arbitraryWidth;
-                            }
-                         */
                         d3.select("#topGames").style("background-color", myColor);
                     });
                 });
