@@ -24,26 +24,8 @@ var array2Table = function(data, columns_obj) {
         d3Obj.style("border", "1.4px solid black")
     };
     d3.select("#topGamesContent").select("#topGames").html("");
-
-    //var tableSvg = d3.select("#topBoxContent")
-    //    .append("svg")
-    //        .attr("width", w/2
-    //        .attr("height", h/2 + margin.top + margin.bottom)
-    //    .append("g")
-    //        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    //var table = .select("#topBoxContent").append("table")
-
-    //var tableDiv = d3.select("#topGamesContent")
-    //                  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
+	
     var table = d3.select("#topGamesContent").select("#topGames");
-
-    //var table = tableSvg.append("table")
-    //              //.style("border-collapse", "collapse")
-    //              .classed("table", true)
-    //              .classed("table-hover", true)
-    //              .classed("table-condensed", true)
-    //              .attr("align", "center");
     var thead = table.append("thead");
     var tbody = table.append("tbody");
 
@@ -108,8 +90,7 @@ var array2Table = function(data, columns_obj) {
                 }
             });
 
-    console.log(table);
-    //fadeInOut("out", "#topGamesContent", 0);
+    //console.log(table);
     fadeInOut("in", "#topGamesContent", 400);
     //  return table
 }
@@ -131,7 +112,7 @@ var steamDetails = function(id) {
         STEAM_COUNTER = 0;
     }
 
-    console.log("hitting /details");
+    //console.log("hitting /details");
     var url = "/details/" + id;
 
     d3.json(url, function(error, json) {
@@ -143,21 +124,9 @@ var steamDetails = function(id) {
             var u = json["header_image"];
             var ending = u.match("\.jpg.*")[0];
             var header_url = u.replace(ending, ".jpg");
-
-            //var currentTopBox = d3.select("#topBox").node();
-            //var currentTopBoxStyle = currentTopBox["style"];
-            ///var cssText = currentTopBoxStyle["cssText"];
-
-            //var detailsBoxLeft = Math.floor(0.7 * w);
-            //var detailsBoxHeight = Math.floor(0.1 * h);
-            //var px = "px";
-
             var detailsBox = d3.select("#steamDetailsBox");
-            //    .style("left", detailsBoxLeft + px)
-            //    .style("top", detailsBoxHeight + px);
-
+		
             detailsBox.select("#headerImage").selectAll("img").remove();
-
             detailsBox.select("#platforms").selectAll("i").remove();
             detailsBox.select("#metacritic").selectAll("a").remove();
 
@@ -202,9 +171,6 @@ var steamDetails = function(id) {
             }
             detailsBox.classed("hidden", false);
             fadeInOut("in", "#steamDetailsBox", 400);
-            //var classed = d3.select("#steamDetailsBox").attr("class");
-            //console.log(classed);
-
         }
     })
 };
@@ -214,9 +180,7 @@ var loadGraph = function() {
     var barPadding = 1;
     var xScale = d3.scale.ordinal()
         .domain(initialData.map(function(d) { return d[1]; }))
-        //.domain(d3.range(initialData.length))
         .rangeRoundBands([0, w - margin["left"] - margin["right"]], .1, .3);
-        //.rangeRoundBands([0, w - (margin["left"] + margin["right"])], 0.05);
 
     var xAxis = d3.svg.axis()
         .scale(xScale)
@@ -244,25 +208,7 @@ var loadGraph = function() {
                 return colors(i);
         })
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-        //.on("mouseover", function(d) {
-        //        var xPos = parseFloat(d3.select(this).attr("x")) + xScale.rangeBand();
-        //        var yPos = parseFloat(d3.select(this).attr("y")) + 10;
-        //        var px = "px";
-        //        var lengthOfName = d[1].length;
-        //        var lengthOfValue = String(d[1]).length;
-
-        //        d3.select("#tooltip")
-        //            .style("left", xPos + px)
-        //            .style("top", yPos + px)
-        //            .style("width", (lengthOfName + lengthOfValue) * 8 + px)
-        //            .select("#genreName")
-        //            .text(d[1]);
-
-                //d3.select("#tooltip").select("#value")
-                //    .text(numericFormat(d[2]));
-                    //
-        //        d3.select("#tooltip").classed("hidden", false);
-        //});
+	
         //labels
         var valueLabels = svg.selectAll("text.value")
           .data(initialData)
@@ -278,7 +224,6 @@ var loadGraph = function() {
               var yMargin = h - margin["bottom"];
               var yPos = h - barHeight - margin["top"];
 
-              //if (yPos >= yMargin - 5) {
               if (barHeight <= 36) {
                 yPos = yMargin - barHeight - 7;
               }
@@ -303,43 +248,11 @@ var loadGraph = function() {
             .call(xAxis)
           .selectAll(".tick text")
             .call(wrap, xScale.rangeBand());
-
-          /*var genreLabels = svg.selectAll("text.genre")
-            .data(initialData)
-            .enter()
-            .append("text")
-            .html(function(d) {
-                genreName = "";
-                if (d[1].search(" ") > 1) {
-                    dSplit = d[1].split(" ");
-                    words = [];
-                    for (var i in dSplit) {
-                      words.push(dSplit[i]);
-                      words.push("<br />");
-                    }
-                  words.pop(-1);
-                  genreName = words.join(" ");
-                }
-                else { genreName = d[1]; }
-
-                return genreName;
-            })
-            .attr("x", function(d, i) {
-              return xScale(i) + margin["left"] + margin["right"] + 5;
-            })
-            .attr("y", function(d, i) {
-              var yMargin = h - margin["bottom"];
-              return yMargin + 5;
-            })
-            .attr("writing-mode", "tb")
-            .attr("font-family", "sans-serif")
-            .attr("font-size", "11px")
-            .attr("fill", "black");
-          */
-
+	
         return [xScale, bars, valueLabels, genreLabels];
     };
 
+//https://bl.ocks.org/mbostock/7555321
 var wrap = function (text, width) {
   text.each(function() {
     var text = d3.select(this),
