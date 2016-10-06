@@ -38,7 +38,6 @@ def create_app(steam):
     def internal_server_error(error):
         return flask.render_template("500.html")
 
-
     @app.route("/list")
     def list():
         if app.debug:
@@ -56,7 +55,6 @@ def create_app(steam):
                 result["genres"].append( (row[0], row[1], row[2]) )
 
         return json.dumps(result)
-
 
     @app.route("/top_games/<genre_id>")
     def top_games(genre_id):
@@ -100,12 +98,9 @@ def create_app(steam):
 
         return json.dumps(result)
 
-
     @app.route("/details/<id>")
     def details(id):
-
-        # the will pause the request if DETAILS COUNTER == MAX
-        # handling api counter client side
+        # handling api counter client side now
 
         id = str(id)
         url = steam.steam_url + id
@@ -137,7 +132,6 @@ def create_app(steam):
 
         return json.dumps(out)
 
-
     def api_counter():
         DETAILS_COUNTER += 1
 
@@ -153,7 +147,6 @@ def create_app(steam):
                 less_than = DETAILS_COUNTER <= DETAILS_MAX
             return less_than
 
-
     @app.route("/steam")
     def index():
         if app.debug:
@@ -162,4 +155,3 @@ def create_app(steam):
 	    return flask.render_template("prod.html")
     
     return app
-
