@@ -26,8 +26,12 @@ var array2Table = function(data, columns_obj) {
     d3.select("#topGamesContent").select("#topGames").html("");
 	
     var table = d3.select("#topGamesContent").select("#topGames");
+
+    var tCaption = table.append("caption");
     var thead = table.append("thead");
     var tbody = table.append("tbody");
+
+    tCaption.html("GENRE");
 
     solidBlack(table);
 
@@ -217,25 +221,18 @@ var loadGraph = function() {
           .text(function(d) { return numericFormat(d[2]); })
           .attr("x", function(d, i) {
               var extraPadding = margin.left + margin.right;
-              return xScale(d[1]) + extraPadding;
+              return xScale(d[1]) + extraPadding - 2;
           })
           .attr("y", function(d, i) {
               var barHeight = yScale(d[2]);
               var yMargin = h - margin["bottom"];
-              var yPos = h - barHeight - margin["top"];
+              var yPos = yMargin - barHeight - 7;
 
-              if (barHeight <= 36) {
-                yPos = yMargin - barHeight - 7;
-              }
               return yPos;
           })
           .attr("text-anchor", "middle")
           .attr("font-family", "sans-serif")
-          .attr("font-size", function(d) {
-                if (d[2] > 999999) {
-                    return "8px";
-                } else { return "10px"; }
-           })
+          .attr("font-size", "9px")
           .attr("font-weight", "bold");
 
         var genreLabels = svg.append("g")
@@ -248,8 +245,27 @@ var loadGraph = function() {
             .call(xAxis)
           .selectAll(".tick text")
             .call(wrap, xScale.rangeBand());
+
+        var chartTitle = svg.append("text")
+            .attr("x", (w/2))
+            .attr("y", 0)
+            .attr("text-anchor", "middle")
+            .style("font-size", "18px")
+            .style("font-family", "PT Sans")
+            .attr("font-weight", "bold")
+            .text("Steam genre popularity by active player count");
+
+        var chartInfo = svg.append("text")
+            .attr("x", (w/2))
+            .attr("y", margin.top/2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "14px")
+            .style("font-family", "PT Sans")
+            .attr("font-weight", "bold")
+            .text("click on a given genre for more info");
+
 	
-        return [xScale, bars, valueLabels, genreLabels];
+        return [xScale, bars, valueLabels, genreLabels, chartTitle, chartInfo];
     };
 
 //https://bl.ocks.org/mbostock/7555321
