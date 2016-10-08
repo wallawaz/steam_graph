@@ -65,6 +65,17 @@ def create_app(steam):
             "top_games": []
         }
 
+        genre_name = []      
+        genre_name_query = "select genre from steam_genres where id = ?"
+        with cursor_execute(steam.dbh,
+                            genre_name_query,
+                            params=[genre_id]) as cursor:
+            for row in cursor:
+                genre_name.append(row[0])
+
+        genre_name = genre_name[0]
+        result["genre_name"] = genre_name
+        
         with cursor_execute(steam.dbh, query) as cursor:
             for rank, row in enumerate(cursor):
                 obj = {

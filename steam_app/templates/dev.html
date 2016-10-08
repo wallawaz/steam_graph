@@ -121,18 +121,6 @@
                   .attr("font-size", "11px");
 
 
-                message2 = "Click on any game category to display its top 10 games being played";
-                messageData = [message];
-
-                svg.selectAll("text-title")
-                    .data(messageData2)
-                    .append("text")
-                    .text(message2)
-                    .attr("x", w - margin["right"] * 10)
-                    .attr("y", h - margin["bottom"])
-                    .attr("text-anchor", "right")
-                    .attr("font-family", "sans-serif")
-                    .attr("font-size", "11px");
             });
 
 
@@ -154,10 +142,13 @@
                     var genre_id = d[0];
                     var data = [];
                     var myColor = d3.select(this).style("fill");
+                    var genre_name;
                     d3.json("/top_games/" + genre_id, function(error, json) {
                         for (var i in json.top_games) {
                             data.push(json.top_games[parseInt(i)]);
                         }
+                        genre_name = json.genre_name;
+                        console.log(genre_name);
                         var columns = [
                             {column: "rank", styles: [["width", "15%"],
                                                       ["text-align", "left"]],
@@ -168,7 +159,7 @@
                             {column: "game", styles: [["width", "65%"]], format: ""},
                             {column: "players", styles: [["width", "20%"],["text-align","right"]], format: numericFormat }
                         ];
-                        array2Table(data, columns);
+                        array2Table(genre_name, data, columns);
                         d3.select("#topGames").style("background-color", myColor);
                     });
                 });

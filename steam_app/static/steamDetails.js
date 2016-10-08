@@ -18,7 +18,7 @@ var fadeInOut = function(fadeIn, d3Selection, durationTime) {
         .style("opacity", end);
 }
 
-var array2Table = function(data, columns_obj) {
+var array2Table = function(genre_name, data, columns_obj) {
 
     var solidBlack = function(d3Obj) {
         d3Obj.style("border", "1.4px solid black")
@@ -27,11 +27,14 @@ var array2Table = function(data, columns_obj) {
 	
     var table = d3.select("#topGamesContent").select("#topGames");
 
-    var tCaption = table.append("caption");
+    var tCaption = table.append("caption")
+        .classed("text-center", true)
+        .style("font-family", "PT Sans");
+
     var thead = table.append("thead");
     var tbody = table.append("tbody");
-
-    tCaption.html("GENRE");
+    
+    tCaption.html(genre_name);
 
     solidBlack(table);
 

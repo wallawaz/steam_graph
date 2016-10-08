@@ -19,7 +19,7 @@ line-height: 10px;
     /*position: relative;*/
     width: auto;
     height: auto;
-    font-family: sans-serif;
+    font-family: PT Sans;
     font-size: 11px;
     text-align: center;
     padding-top: 20px;
@@ -34,8 +34,8 @@ tbody {
     overflow: auto;
 }
 tr {
-
     width: 100%;
+    cursor: pointer;
 }
 th {
     width: 100%;
